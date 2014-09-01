@@ -18,6 +18,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import com.hadoop.mapreduce.LzoTextInputFormat;
+
 
 public class PingbackLogMR extends Configured implements Tool{
 
@@ -74,19 +76,19 @@ public class PingbackLogMR extends Configured implements Tool{
 	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
 	        
-	    int reduceNum = Integer.parseInt(args[2]);
+	    int reduceNum = Integer.parseInt(args[3]);
 	    job.setNumReduceTasks(reduceNum);
-	    job.setInputFormatClass(TextInputFormat.class);
+	    job.setInputFormatClass(LzoTextInputFormat.class);
 	    //job.setOutputFormatClass(GbkOutputFormat.class);
 	    job.setOutputFormatClass(TextOutputFormat.class);
 	    
 	     
 	    List<String> directoryList = GeneratePath.genPathByDate(PingbackConstant.pingbackBasePath, args[0], args[1]);
 	    for(String dir : directoryList){
-	    	MultipleInputs.addInputPath(job, new Path(args[0]),TextInputFormat.class);
+	    	MultipleInputs.addInputPath(job, new Path(dir),LzoTextInputFormat.class);
 	    }
 
-	    TextOutputFormat.setOutputPath(job, new Path(args[1]));
+	    TextOutputFormat.setOutputPath(job, new Path(args[2]));
 	    boolean success = job.waitForCompletion(true);
 	    return success ? 0 : 2;
 	}
