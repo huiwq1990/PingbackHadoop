@@ -12,6 +12,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Mapper.Context;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -23,9 +24,10 @@ import com.hadoop.mapreduce.LzoTextInputFormat;
 
 public class PingbackLogMR extends Configured implements Tool{
 
-	Pattern logPattern = Pattern.compile("\\[.*?\\]");
-	String sogouObserverStart = "Sogou-Observer";
-	class LogMapper extends Mapper<Object, Text, Text, Text> {
+	public final static Pattern logPattern = Pattern.compile("\\[.*?\\]");
+	public final static String sogouObserverStart = "Sogou-Observer";
+	
+	public static class LogMapper extends Mapper<Object, Text, Text, Text> {
 		List<String> logColList = new ArrayList<String>();
 		Matcher matcher;
 
@@ -46,15 +48,27 @@ public class PingbackLogMR extends Configured implements Tool{
 						.replaceAll("\\]", "");//remove [ and ]
 				logColList.add(param);
 			}
-			if (logColList.size() < 3 || logColList.get(2).startsWith(sogouObserverStart) == false) {
+			if (logColList.size() < 4 || logColList.get(3).startsWith(sogouObserverStart) == false) {
 				return;
 			}
-			context.write(new Text(key.toString()), new Text(logColList.get(2)));
+			
+			
+			
+			context.write(new Text(key.toString()), new Text(logColList.get(3)));
 		}
 	}
 
+	public static class LogReducer extends Reducer<Text, Text, Text, Text>{
+		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException{			
+			
+		}
+		
+	}
+	
+	
+	
 	public static void main(String[] args) throws Exception {
-		if(args.length != 3)
+		if(args.length != 4)
 		{
 			System.err.println("Usage: ProcessLingxi <startdate> <enddate> <output file path> <reduce number>");
 			System.exit(-1);
@@ -71,15 +85,17 @@ public class PingbackLogMR extends Configured implements Tool{
 	    job.setMapperClass(LogMapper.class);
 	    job.setMapOutputKeyClass(Text.class);
 	    job.setMapOutputValueClass(Text.class);
-	                
-//	    job.setReducerClass(PvLogReducer.class);
+//	    ChainMapper.
+	    
+	    job.setReducerClass(LogReducer.class);
 	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
 	        
 	    int reduceNum = Integer.parseInt(args[3]);
+	    reduceNum = 0;
 	    job.setNumReduceTasks(reduceNum);
+	    
 	    job.setInputFormatClass(LzoTextInputFormat.class);
-	    //job.setOutputFormatClass(GbkOutputFormat.class);
 	    job.setOutputFormatClass(TextOutputFormat.class);
 	    
 	     
